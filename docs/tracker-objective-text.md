@@ -49,6 +49,16 @@ The missing-source-item step has no native objective text. `TrackerQuestieBehavi
 
 Quest titles, completion instructions, timers, achievements, scenarios, and challenge-mode rows are outside this change. They retain their existing formatting.
 
+## Completed quest grouping
+
+**Move completed quests to turn-in zone** is under Tracker > Quest Options (Quest and Achievement Options on newer clients) > Objectives in both settings interfaces, below Objective Sorting. It is off by default (`trackerMoveCompletedQuestsToTurnInZone`); migration 50 also leaves existing profiles opted out.
+
+When enabled, the three zone sorting modes use `TrackerTurnInZone` through the shared `TrackerUtils.GetQuestGroupName` seam. A completed, non-failed quest moves only when all eligible NPC/object finishers resolve to exactly one known geographic zone different from its original zone. Opposite-faction NPCs and invisible spawn phases are excluded. Missing entities, location data or maps, unknown eligibility, and distinct eligible zones keep the original header. Waypoint-only outdoor finishers use their patrol zone; dungeon sentinel spawns and dungeon aliases keep the actual dungeon, not its outdoor entrance.
+
+Incomplete quests, quests without a travel destination, profession/class/category headers, and non-zone sorting modes retain their existing groups. A native subzone header is preserved when the destination normalizes to the same zone. The resolver does not use player distance or cache group results. `TrackerData` includes the effective group in its layout signature while the option is enabled, so completion reversal, late metadata and phase changes are picked up on refresh. Both setting setters request a full tracker update. Collapsed headers and retracking use the same group name as sorting.
+
+Only tracker display grouping changes. Native headers, database `zoneOrSort`, original quest/map objects, click behavior, map icons and navigation remain unchanged. A clicked quest map may show a transit zone and is not evidence of the turn-in destination.
+
 ## Unit, item, object and map tooltips
 
 `Tooltip.lua` and `MapIconTooltip.lua` prefer accepted cached objective `text` for local native objective rows, keeping punctuation and counter placement unchanged. Colors, player labels and drop rates are added separately. Missing cache rows, special objectives, and synthetic source-item rows retain the existing description/counter fallback. Source-item rows must not borrow a native row merely because their indices coincide. Native wording also takes precedence over the spell-item label; that label remains a fallback when native data is absent.

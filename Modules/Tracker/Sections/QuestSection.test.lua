@@ -108,6 +108,32 @@ describe("QuestSection", function()
         assert.spy(TrackerUtils.AddQuestItemButtons).was.called(1)
     end)
 
+    it("uses the computed turn-in group for headers and minimize-all bookkeeping", function()
+        local quest = _Quest(1, 1)
+        quest.zoneName = "Northshire Abbey"
+        Questie.db.char.collapsedZones["Northshire Abbey"] = true
+        Questie.db.char.minAllQuestsInZone = {Westfall = {isTrue = true}, ["Northshire Abbey"] = {isTrue = true}}
+
+        QuestSection.Draw(_Details({{quest = quest, zoneName = "Westfall"}}))
+
+        assert.are_same({"|cFFC0C0C0Westfall|r", "Quest 1", "Quest Complete!"}, texts)
+        assert.are.equal("Westfall", drawnLines[2].expandQuest.zoneId)
+        assert.is_true(Questie.db.char.minAllQuestsInZone.Westfall[1])
+        assert.is_nil(Questie.db.char.minAllQuestsInZone["Northshire Abbey"][1])
+        assert.are.equal("Northshire Abbey", quest.zoneName)
+    end)
+
+    it("hides a moved quest under its collapsed destination header", function()
+        local quest = _Quest(1, 1)
+        quest.zoneName = "Northshire Abbey"
+        Questie.db.char.collapsedZones.Westfall = true
+
+        QuestSection.Draw(_Details({{quest = quest, zoneName = "Westfall"}}))
+
+        assert.are_same({"|cFFC0C0C0Westfall +|r"}, texts)
+        assert.spy(TrackerUtils.AddQuestItemButtons).was.not_called()
+    end)
+
     it("should indent the objectives of a quest with a secondary item button", function()
         local withButtons = _Quest(1, 0, {{Description = "Wolf slain: 1/5", Completed = false}})
         local withoutButtons = _Quest(2, 0, {{Description = "Bear slain: 1/5", Completed = false}})

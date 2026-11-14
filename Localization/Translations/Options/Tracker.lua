@@ -2,6 +2,30 @@
 local l10n = QuestieLoader:ImportModule("l10n")
 
 local trackerOptionsLocales = {
+    ["Move completed quests to turn-in zone"] = {
+        ["enUS"] = true,
+        ["deDE"] = false,
+        ["esES"] = false,
+        ["esMX"] = false,
+        ["frFR"] = false,
+        ["koKR"] = false,
+        ["ptBR"] = false,
+        ["ruRU"] = false,
+        ["zhCN"] = false,
+        ["zhTW"] = false,
+    },
+    ["When sorting by zone, move completed quests to their known turn-in zone. Quests with multiple or unknown turn-in zones keep their original group. Quest navigation is unchanged."] = {
+        ["enUS"] = true,
+        ["deDE"] = false,
+        ["esES"] = false,
+        ["esMX"] = false,
+        ["frFR"] = false,
+        ["koKR"] = false,
+        ["ptBR"] = false,
+        ["ruRU"] = false,
+        ["zhCN"] = false,
+        ["zhTW"] = false,
+    },
     ["Tracker"] = {
         ["enUS"] = true,
         ["deDE"] = "Tracker",

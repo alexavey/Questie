@@ -258,6 +258,7 @@ Modules\Tracker\AchievementTracking.lua
 Modules\Tracker\TrackerAchievements.lua
 Modules\Tracker\TrackerRecipes.lua
 Modules\Tracker\TrackerMapEligibility.lua
+Modules\Tracker\TrackerTurnInZone.lua
 Modules\Tracker\TrackerLayout.lua
 Modules\Tracker\Sections\RecipeSection.lua
 Modules\Tracker\Sections\ScenarioSection.lua

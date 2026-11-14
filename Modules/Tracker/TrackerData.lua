@@ -52,7 +52,8 @@ local function _AppendStrings(parts, ...)
 end
 
 ---The quest data the tracker layout reads for one quest, as one comparable string.
----Settings and UI state are not included: changing them calls QuestieTracker:Update() directly.
+---Settings and UI changes call QuestieTracker:Update() directly.
+---The optional turn-in group is reevaluated so late finisher metadata and phase changes invalidate the layout.
 ---Quest timers are not included either. Legacy timers carry no quest ID, so TrackerData.Refresh counts them instead.
 ---@param displayQuest TrackerQuest
 ---@return string
@@ -62,7 +63,8 @@ local function _GetLayoutSignature(displayQuest)
     local parts = {}
     _AppendStrings(parts, displayQuest.name, displayQuest.level, displayQuest.zoneName, displayQuest.zoneOrSort,
         displayQuest.completionState, displayQuest.isComplete, displayQuest.objectivesLoaded, displayQuest.enrichment ~= nil,
-        QuestieLib:GetQuestTypeSuffix(displayQuest.Id), TrackerUtils:GetCompletionText(displayQuest), table.concat(itemIds, ","))
+        QuestieLib:GetQuestTypeSuffix(displayQuest.Id), TrackerUtils:GetCompletionText(displayQuest), table.concat(itemIds, ","),
+        Questie.db.profile.trackerMoveCompletedQuestsToTurnInZone and TrackerUtils.GetQuestGroupName(displayQuest))
     for _, objective in ipairs(displayQuest.Objectives) do
         _AppendStrings(parts, objective.Type, objective.Description, objective.Collected, objective.Needed, objective.Completed)
     end

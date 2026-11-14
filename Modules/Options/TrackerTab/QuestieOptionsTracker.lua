@@ -413,6 +413,21 @@ function QuestieOptions.tabs.tracker:Initialize()
                                     QuestieTracker:Update()
                                 end
                             },
+                            moveCompletedQuestsToTurnInZone = {
+                                type = "toggle",
+                                order = 11,
+                                width = "full",
+                                name = function() return l10n("Move completed quests to turn-in zone") end,
+                                desc = function()
+                                    return l10n("When sorting by zone, move completed quests to their known turn-in zone. Quests with multiple or unknown turn-in zones keep their original group. Quest navigation is unchanged.")
+                                end,
+                                disabled = function() return not Questie.db.profile.trackerEnabled end,
+                                get = function() return Questie.db.profile.trackerMoveCompletedQuestsToTurnInZone end,
+                                set = function(_, value)
+                                    Questie.db.profile.trackerMoveCompletedQuestsToTurnInZone = value
+                                    QuestieTracker:Update()
+                                end
+                            },
                         },
                     },
                 }

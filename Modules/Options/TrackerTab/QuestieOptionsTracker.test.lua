@@ -32,6 +32,8 @@ describe("tracker automatic tracking option", function()
         compat.QuestLog_Update = spy.new(function() end)
         visibility = QuestieLoader:ImportModule("CommsVisibility")
         visibility.ScheduleSnapshot = spy.new(function() end)
+        dofile("Localization/l10n.lua")
+        dofile("Localization/Translations/Options/Tracker.lua")
         dofile("Modules/Options/TrackerTab/QuestieOptionsTracker.lua")
     end)
 
@@ -122,6 +124,24 @@ describe("tracker automatic tracking option", function()
         assert.spy(tracker.Update).was.called_with(tracker)
         assert.spy(visibility.ScheduleSnapshot).was.called_with(visibility, "AUTO_TRACK_QUESTS")
         assert.spy(compat.QuestLog_Update).was.not_called()
+    end)
+
+    it("shows the exact turn-in grouping label and updates the tracker on both toggles", function()
+        Questie.db.profile.trackerMoveCompletedQuestsToTurnInZone = false
+        Questie.db.profile.trackerEnabled = true
+        local settings = options.tabs.tracker:Initialize()
+        local option = settings.args.group_quests.args.group_tracker.args.moveCompletedQuestsToTurnInZone
+
+        assert.are.equal("Move completed quests to turn-in zone", option.name())
+        assert.is_false(option.get())
+        assert.is_false(option.disabled())
+        option.set(nil, true)
+        assert.is_true(option.get())
+        option.set(nil, false)
+        assert.is_false(option.get())
+        assert.spy(tracker.Update).was.called(2)
+        Questie.db.profile.trackerEnabled = false
+        assert.is_true(option.disabled())
     end)
 
     -- Quest-log checks skip unchanged quests, so this setting must request the quest lines itself.

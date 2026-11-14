@@ -86,6 +86,7 @@ function QuestieOptionsDefaults:Load()
             -- Tracker Settings Tab
             autoTrackQuests = true,
             trackerShowCompleteQuests = true,
+            trackerMoveCompletedQuestsToTurnInZone = false,
             trackerShowQuestLevel = true,
             collapseCompletedQuests = false,
             trackerShowQuestFocusButtons = true,

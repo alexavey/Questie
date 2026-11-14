@@ -317,6 +317,19 @@ describe("QuestieTracker", function()
             assert.is_nil(Questie.db.char.collapsedZones["Quests (By Level)"])
         end)
 
+        it("expands only the completed quest's turn-in group on retrack", function()
+            TrackerUtils.GetQuestGroupName = function() return "Westfall" end
+            Questie.db.char.AutoUntrackedQuests[91741] = true
+            Questie.db.char.collapsedQuests[91741] = true
+            Questie.db.char.collapsedZones = {["Westfall"] = true, ["Northshire Abbey"] = true}
+
+            QuestieTracker:AQW_Insert(2)
+
+            assert.is_nil(Questie.db.char.collapsedZones["Westfall"])
+            assert.is_true(Questie.db.char.collapsedZones["Northshire Abbey"])
+            assert.is_nil(Questie.db.char.collapsedQuests[91741])
+        end)
+
         it("ignores Blizzard's auto-watch before Questie finishes accepting the quest in manual tracking", function()
             Questie.IsForever = false
             Questie.db.profile.autoTrackQuests = false

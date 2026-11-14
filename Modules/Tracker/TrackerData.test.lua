@@ -7,8 +7,10 @@ describe("TrackerData", function()
     local TrackerData, QuestieLib, QuestieDB, QuestiePlayer, QuestLogCache, compat
     local entries, cached, completion
     local originalGetNumEntries, originalGetTitle, originalGetIndex, originalGetQuestSortIndex, originalGetInfo
+    local originalMap
 
     before_each(function()
+        originalMap = _G.C_Map
         compat = QuestieLoader:ImportModule("QuestieCompat")
         originalGetNumEntries = compat.GetNumQuestLogEntries
         originalGetTitle = compat.GetQuestLogTitle
@@ -50,6 +52,7 @@ describe("TrackerData", function()
         local trackerUtils = QuestieLoader:ImportModule("TrackerUtils")
         trackerUtils.GetQuestItemIds = function() return {} end
         trackerUtils.GetCompletionText = function() return nil end
+        trackerUtils.GetQuestGroupName = function(quest) return quest.zoneName end
         QuestieLoader:ImportModule("QuestieEvent").IsEventQuest = function() return false end
         dofile("Localization/l10n.lua")
         dofile("Modules/Libs/QuestieLib.lua")
@@ -67,6 +70,66 @@ describe("TrackerData", function()
         compat.GetQuestLogIndexByID = originalGetIndex
         _G.GetQuestSortIndex = originalGetQuestSortIndex
         C_QuestLog.GetInfo = originalGetInfo
+        _G.C_Map = originalMap
+    end)
+
+    it("invalidates grouping on late metadata, phase changes, completion reversal and cache misses", function()
+        local ZoneDB = QuestieLoader:ImportModule("ZoneDB")
+        ZoneDB.GetAreaIdByName = function() return 12 end
+        ZoneDB.GetParentZoneId = function() return nil end
+        ZoneDB.IsDungeonZone = function() return false end
+        ZoneDB.GetUiMapIdByAreaId = function(_, id) return id end
+        _G.C_Map = {
+            GetAreaInfo = function(id) return id == 12 and "Elwynn Forest" or "Westfall" end,
+            GetMapInfo = function() return {mapType = 3} end,
+        }
+        local npc
+        QuestieDB.GetNPC = function() return npc end
+        local visible = true
+        QuestieLoader:ImportModule("Phasing").IsSpawnVisible = function() return visible end
+        dofile("Modules/Tracker/TrackerTurnInZone.lua")
+        local resolver = QuestieLoader:ImportModule("TrackerTurnInZone")
+        local trackerUtils = QuestieLoader:ImportModule("TrackerUtils")
+        trackerUtils.GetQuestGroupName = function(quest) return resolver.GetGroupName(quest) or quest.zoneName end
+        Questie.db.profile.trackerMoveCompletedQuestsToTurnInZone = true
+        Questie.db.profile.trackerSortObjectives = "byZone"
+        cached[91741] = {objectives = {}}
+        completion = 1
+        local original = {zoneOrSort = 12, Finisher = {NPC = {1}}, Objectives = {}, ObjectiveData = {}}
+        ActiveQuests.Add(91741, original)
+        local display = TrackerData.RefreshQuest(91741)
+        local initialRevision = TrackerData.GetLayoutRevision()
+
+        npc = {friendly = true, spawns = {[40] = {{50, 50, 1}}}}
+        TrackerData.RefreshQuest(91741)
+        local movedRevision = TrackerData.GetLayoutRevision()
+        local movedGroup = trackerUtils.GetQuestGroupName(display)
+        visible = false
+        TrackerData.RefreshQuest(91741)
+        local phasedRevision = TrackerData.GetLayoutRevision()
+        local phasedGroup = trackerUtils.GetQuestGroupName(display)
+        visible = true
+        TrackerData.RefreshQuest(91741)
+        completion = 0
+        TrackerData.RefreshQuest(91741)
+        local revertedGroup = trackerUtils.GetQuestGroupName(display)
+        completion = 1
+        TrackerData.RefreshQuest(91741)
+        cached[91741] = nil
+        TrackerData.RefreshQuest(91741)
+        local unloadedGroup = trackerUtils.GetQuestGroupName(display)
+
+        assert.are_not.equal(initialRevision, movedRevision)
+        assert.are_not.equal(movedRevision, phasedRevision)
+        assert.are.equal("Westfall", movedGroup)
+        assert.are.equal("Northshire Abbey", phasedGroup)
+        assert.are.equal("Northshire Abbey", revertedGroup)
+        assert.are.equal("Northshire Abbey", unloadedGroup)
+        assert.are.equal(0, display:IsComplete())
+        assert.is_false(display.isComplete)
+        assert.are.equal("Northshire Abbey", display.zoneName)
+        assert.are.equal(12, original.zoneOrSort)
+        assert.are.equal(original, display.enrichment)
     end)
 
     describe("modern native headers", function()
@@ -960,6 +1023,35 @@ describe("TrackerData", function()
             TrackerData.Refresh()
 
             assert.are_not.equal(revision, TrackerData.GetLayoutRevision())
+        end)
+
+        it("advances when the effective turn-in group changes without native quest changes", function()
+            Questie.db.profile.trackerMoveCompletedQuestsToTurnInZone = true
+            local group = "Northshire Abbey"
+            trackerUtils.GetQuestGroupName = function() return group end
+            TrackerData.Refresh()
+            local revision = TrackerData.GetLayoutRevision()
+
+            group = "Westfall"
+            TrackerData.RefreshQuest(91741)
+            local movedRevision = TrackerData.GetLayoutRevision()
+            TrackerData.Refresh()
+
+            assert.are_not.equal(revision, movedRevision)
+            assert.are.equal(movedRevision, TrackerData.GetLayoutRevision())
+            assert.are.equal("Northshire Abbey", TrackerData.GetQuest(91741).zoneName)
+
+            group = "Northshire Abbey"
+            TrackerData.Refresh()
+            assert.are_not.equal(movedRevision, TrackerData.GetLayoutRevision())
+        end)
+
+        it("does not resolve optional grouping in the layout signature when disabled", function()
+            trackerUtils.GetQuestGroupName = spy.new(function() error("Disabled grouping must not query metadata") end)
+
+            TrackerData.Refresh()
+
+            assert.spy(trackerUtils.GetQuestGroupName).was.not_called()
         end)
 
         -- Non-English clients get no looted-item trigger, so the next quest-log check must show the button.

@@ -22,6 +22,8 @@ local TrackerData = QuestieLoader:ImportModule("TrackerData")
 local TrackerRecipes = QuestieLoader:ImportModule("TrackerRecipes")
 ---@type TrackerMapEligibility
 local TrackerMapEligibility = QuestieLoader:ImportModule("TrackerMapEligibility")
+---@type TrackerTurnInZone
+local TrackerTurnInZone = QuestieLoader:ImportModule("TrackerTurnInZone")
 ---@type TrackerFadeTicker
 local TrackerFadeTicker = QuestieLoader:ImportModule("TrackerFadeTicker")
 ---@type QuestieCombatQueue
@@ -744,7 +746,7 @@ end
 ---@param quest TrackerQuest
 ---@return string groupName The zone or category when sorting by zone, otherwise the sort mode's single group.
 function TrackerUtils.GetQuestGroupName(quest)
-    return _GetZoneName(quest.zoneOrSort, quest.Id, quest.zoneName)
+    return TrackerTurnInZone.GetGroupName(quest) or _GetZoneName(quest.zoneOrSort, quest.Id, quest.zoneName)
 end
 
 ---@return table sortedQuestIds Table with sorted Quest ID's by Sort Type

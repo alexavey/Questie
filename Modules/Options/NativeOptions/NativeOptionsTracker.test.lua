@@ -107,6 +107,23 @@ describe("native tracker options", function()
         assert.spy(compat.QuestLog_Update).was.not_called()
     end)
 
+    it("shows the exact turn-in grouping label and updates the tracker on both toggles", function()
+        Questie.db.profile.trackerMoveCompletedQuestsToTurnInZone = false
+        Questie.db.profile.trackerEnabled = true
+        local option = LoadTab().group_quests.items.group_objectives.items.moveCompletedQuestsToTurnInZone
+
+        assert.are.equal("Move completed quests to turn-in zone", option.title)
+        assert.is_false(option.get())
+        assert.is_true(option.enabled())
+        option.set(nil, true)
+        assert.is_true(option.get())
+        option.set(nil, false)
+        assert.is_false(option.get())
+        assert.spy(tracker.Update).was.called(2)
+        Questie.db.profile.trackerEnabled = false
+        assert.is_false(option.enabled())
+    end)
+
     -- Quest-log checks skip unchanged quests, so this setting must request the quest lines itself.
     it("lays out the tracker when always showing it expands a minimized tracker", function()
         Questie.db.char.isTrackerExpanded = false

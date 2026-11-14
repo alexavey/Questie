@@ -73,6 +73,7 @@ describe("TrackerUtils", function()
         TrackerLinePool = QuestieLoader:ImportModule("TrackerLinePool")
         QuestieLoader:ImportModule("TrackerItemButton")
 
+        dofile("Modules/Tracker/TrackerTurnInZone.lua")
         dofile("Modules/Tracker/TrackerUtils.lua")
         TrackerUtils = QuestieLoader:ImportModule("TrackerUtils")
 
@@ -1428,6 +1429,15 @@ describe("TrackerUtils", function()
     end)
 
     describe("GetQuestGroupName", function()
+        it("uses the optional turn-in group without replacing the native header", function()
+            Questie.db.profile.trackerSortObjectives = "byZone"
+            QuestieLoader:ImportModule("TrackerTurnInZone").GetGroupName = function() return "Westfall" end
+            local quest = {Id = 1, zoneName = "Northshire Abbey", zoneOrSort = 12}
+
+            assert.are.equal("Westfall", TrackerUtils.GetQuestGroupName(quest))
+            assert.are.equal("Northshire Abbey", quest.zoneName)
+        end)
+
         it("uses the native header when sorting by zone", function()
             Questie.db.profile.trackerSortObjectives = "byZone"
 
